@@ -59,6 +59,10 @@ public class AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setProvider(AuthProvider.LOCAL);
+        // Role is set by default constructor, but ensure it's set
+        if (user.getRole() == null) {
+            user.setRole(com.gitdense.backend.model.enums.Role.USER);
+        }
 
         User result = userRepository.save(user);
 

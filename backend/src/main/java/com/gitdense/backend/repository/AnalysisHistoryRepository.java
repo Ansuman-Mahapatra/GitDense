@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface AnalysisHistoryRepository extends JpaRepository<AnalysisHistory, UUID> {
-    List<AnalysisHistory> findByRepositoryIdOrderByAnalyzedAtDesc(UUID repositoryId);
+    List<AnalysisHistory> findByRepository_IdOrderByAnalyzedAtDesc(UUID repositoryId);
 }

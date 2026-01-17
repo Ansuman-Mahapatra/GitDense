@@ -27,7 +27,7 @@ public class RepositoryService {
     private UserRepository userRepository;
 
     public List<RepositoryDTO> getAllRepositories(UUID userId) {
-        return repositoryRepository.findByUserId(userId).stream()
+        return repositoryRepository.findByUser_Id(userId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -59,6 +59,11 @@ public class RepositoryService {
     public Repository getRepositoryById(UUID repoId) {
         return repositoryRepository.findById(repoId)
             .orElseThrow(() -> new ResourceNotFoundException("Repository", "id", repoId));
+    }
+    
+    public RepositoryDTO getRepositoryDTOById(UUID repoId) {
+        Repository repository = getRepositoryById(repoId);
+        return mapToDTO(repository);
     }
 
     private RepositoryDTO mapToDTO(Repository repository) {

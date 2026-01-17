@@ -16,11 +16,13 @@ import java.util.UUID;
 @Repository
 public interface CommitRepository extends JpaRepository<Commit, UUID> {
     
-    Page<Commit> findByRepositoryId(UUID repositoryId, Pageable pageable);
+    Page<Commit> findByRepository_Id(UUID repositoryId, Pageable pageable);
     
-    Page<Commit> findByRepositoryIdAndCategory(UUID repositoryId, CommitCategory category, Pageable pageable);
+    Page<Commit> findByRepository_IdAndCategory(UUID repositoryId, CommitCategory category, Pageable pageable);
     
-    List<Commit> findByRepositoryIdAndCommitDateBetween(UUID repositoryId, LocalDateTime start, LocalDateTime end);
+    List<Commit> findByRepository_IdAndCommitDateBetween(UUID repositoryId, LocalDateTime start, LocalDateTime end);
+    
+    long countByRepository_Id(UUID repositoryId);
     
     @Query("SELECT c.category, COUNT(c) FROM Commit c WHERE c.repository.id = :repositoryId GROUP BY c.category")
     List<Object[]> countCommitsByCategory(@Param("repositoryId") UUID repositoryId);

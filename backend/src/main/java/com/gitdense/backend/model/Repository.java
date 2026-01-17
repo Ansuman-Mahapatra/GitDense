@@ -2,6 +2,7 @@ package com.gitdense.backend.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "repositories")
 @Getter
 @Setter
+@Data
 public class Repository extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,4 +28,6 @@ public class Repository extends BaseEntity {
     private String localPath;
 
     private LocalDateTime lastAnalyzed;
+
+
 }

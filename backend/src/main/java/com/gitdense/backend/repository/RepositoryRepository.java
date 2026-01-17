@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @org.springframework.stereotype.Repository
 public interface RepositoryRepository extends JpaRepository<Repository, UUID> {
-    List<Repository> findByUserId(UUID userId);
+    List<Repository> findByUser_Id(UUID userId);
     Optional<Repository> findByLocalPath(String localPath);
 }

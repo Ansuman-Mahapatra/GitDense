@@ -3,6 +3,7 @@ package com.gitdense.backend.controller;
 import com.gitdense.backend.dto.AnalysisHistoryDTO;
 import com.gitdense.backend.dto.AnalysisResultDTO;
 import com.gitdense.backend.model.Repository;
+import com.gitdense.backend.repository.CommitRepository;
 import com.gitdense.backend.service.AnalysisHistoryService;
 import com.gitdense.backend.service.GitAnalysisService;
 import com.gitdense.backend.service.RepositoryService;
@@ -10,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +29,9 @@ public class AnalysisController {
     @Autowired
     private AnalysisHistoryService analysisHistoryService;
 
+    @Autowired
+    private CommitRepository commitRepository;
+
     @PostMapping("/repository/{id}/start")
     public ResponseEntity<AnalysisResultDTO> startAnalysis(@PathVariable UUID id) {
         Repository repository = repositoryService.getRepositoryById(id);
@@ -34,8 +40,17 @@ public class AnalysisController {
         try {
             gitAnalysisService.analyzeRepository(repository);
             
-            // Capture results (mocked for now, real implementation would aggregate stats)
-            analysisHistoryService.saveHistory(repository, 0, null, System.currentTimeMillis() - startTime);
+            // Calculate actual statistics
+            int totalCommits = (int) commitRepository.countByRepository_Id(repository.getId());
+            List<Object[]> categoryCounts = commitRepository.countCommitsByCategory(repository.getId());
+            Map<String, Integer> categoriesCount = new HashMap<>();
+            for (Object[] row : categoryCounts) {
+                String category = row[0].toString();
+                Long count = (Long) row[1];
+                categoriesCount.put(category, count.intValue());
+            }
+            
+            analysisHistoryService.saveHistory(repository, totalCommits, categoriesCount, System.currentTimeMillis() - startTime);
             
             return ResponseEntity.ok(AnalysisResultDTO.builder()
                     .success(true)

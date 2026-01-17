@@ -34,7 +34,7 @@ public class RepositoryController {
     @GetMapping("/{id}")
     public ResponseEntity<RepositoryDTO> getRepository(@PathVariable UUID id) {
         // In real app, verify user owns repo
-        // return ResponseEntity.ok(repositoryService.getRepositoryById(id));
-        return ResponseEntity.ok().build(); // Implement actual retrieval later
+        RepositoryDTO repository = repositoryService.getRepositoryDTOById(id);
+        return ResponseEntity.ok(repository);
     }
 }

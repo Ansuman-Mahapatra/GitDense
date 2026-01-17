@@ -31,7 +31,7 @@ public class AnalysisHistoryService {
     }
     
     public List<AnalysisHistoryDTO> getHistory(UUID repositoryId) {
-        return analysisHistoryRepository.findByRepositoryIdOrderByAnalyzedAtDesc(repositoryId).stream()
+        return analysisHistoryRepository.findByRepository_IdOrderByAnalyzedAtDesc(repositoryId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
