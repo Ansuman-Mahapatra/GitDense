@@ -1,6 +1,6 @@
-# GitTEnz Desktop
+# GitDense Desktop
 
-This is the Electron-based desktop application for GitTEnz. It wraps the React frontend in a native cross-platform executable, allowing you to run GitTEnz as a desktop app without opening a browser.
+This is the standalone Electron-based desktop application for GitTEnz. It wraps the React frontend in a native cross-platform executable, allowing you to run GitTEnz natively as a desktop app without opening a browser.
 
 ---
 
@@ -31,8 +31,8 @@ This is the Electron-based desktop application for GitTEnz. It wraps the React f
 
 3. **Start the desktop app:**
    ```bash
-   cd desktop
-   npm start
+   cd GitDense
+   npm run dev
    ```
 
 The Electron app will open and load the Vite dev server at `http://localhost:5180`.
@@ -57,11 +57,11 @@ This creates `frontend/dist/` with relative `file://` paths compatible with Elec
 ### Step 2: Package the Desktop App
 
 ```bash
-cd ../desktop
+cd ../GitDense
 npm run dist
 ```
 
-The installer/executable will be output to `desktop/dist/`:
+The installer/executable will be output to `GitDense/dist-electron/`:
 
 - **Windows**: `.exe` installer
 - **macOS**: `.dmg`
@@ -92,7 +92,7 @@ If you change the `.env.electron` file, rebuild the frontend before re-packaging
 ```bash
 cd ../frontend
 npx vite build --mode electron
-cd ../desktop
+cd ../GitDense
 npm run dist
 ```
 
