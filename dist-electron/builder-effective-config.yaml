@@ -1,0 +1,36 @@
+directories:
+  output: dist-electron
+  buildResources: public
+appId: com.gittenz.desktop
+productName: GitTEnz
+copyright: Copyright © 2025 GitTEnz
+compression: maximum
+files:
+  - filter:
+      - main.js
+      - preload.js
+      - dist/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: public/favicon.ico
+  artifactName: GitTEnz-Setup-${version}.exe
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: public/favicon.ico
+  uninstallerIcon: public/favicon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: GitTEnz
+  perMachine: false
+  runAfterFinish: true
+  menuCategory: GitTEnz
+mac:
+  target: dmg
+  icon: public/favicon.ico
+linux:
+  target: AppImage
+electronVersion: 34.5.8
