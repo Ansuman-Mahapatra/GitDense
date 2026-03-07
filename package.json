@@ -1,7 +1,7 @@
 {
-  "name": "gittenz-desktop",
+  "name": "gitdense-desktop",
   "version": "1.0.0",
-  "description": "GitTEnz Desktop - Commits, decoded. Your intelligent GitHub companion.",
+  "description": "GitDense Desktop - Commits, decoded. Your intelligent GitHub companion.",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -14,9 +14,9 @@
     "preview": "vite preview"
   },
   "build": {
-    "appId": "com.gittenz.desktop",
-    "productName": "GitTEnz",
-    "copyright": "Copyright © 2025 GitTEnz",
+    "appId": "com.gitdense.desktop",
+    "productName": "GitDense",
+    "copyright": "Copyright © 2025 GitDense",
     "compression": "maximum",
     "directories": {
       "output": "dist-electron",
@@ -37,7 +37,7 @@
         }
       ],
       "icon": "public/favicon.ico",
-      "artifactName": "GitTEnz-Setup-${version}.exe"
+      "artifactName": "GitDense-Setup-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -46,10 +46,10 @@
       "uninstallerIcon": "public/favicon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "GitTEnz",
+      "shortcutName": "GitDense",
       "perMachine": false,
       "runAfterFinish": true,
-      "menuCategory": "GitTEnz"
+      "menuCategory": "GitDense"
     },
     "mac": {
       "target": "dmg",
