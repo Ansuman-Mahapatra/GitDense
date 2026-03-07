@@ -139,6 +139,8 @@ function AppRoutes() {
   );
 }
 
+import { GlobalBackground } from "./components/layout/GlobalBackground";
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -146,6 +148,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <GlobalBackground />
           {/* Electron wrapper: adds padding so app floats away from OS window border */}
           <div className="electron-wrapper">
             <div className="electron-inner">
