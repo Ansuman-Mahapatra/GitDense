@@ -13,13 +13,8 @@ export function SignupPage() {
     const { signUpWithEmail } = useAuth();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-    const [otpSent, setOtpSent] = useState(false);
-    const [isVerified, setIsVerified] = useState(false);
-    const [otp, setOtp] = useState("");
-    const [isSendingOtp, setIsSendingOtp] = useState(false);
     const [formData, setFormData] = useState({
         username: "",
-        email: "",
         password: "",
         confirmPassword: "",
         name: ""
@@ -32,15 +27,10 @@ export function SignupPage() {
             return;
         }
 
-        if (!isVerified) {
-            toast.error("Please verify your email first.");
-            return;
-        }
-
         setIsLoading(true);
         try {
-            await signUpWithEmail({ ...formData, otp });
-            toast.success("Account created successfully!");
+            await signUpWithEmail({ ...formData, otp: "" });
+            toast.success("Account created! You can log in right now.");
             navigate("/login");
         } catch (error: any) {
             toast.error(error.message);
@@ -49,30 +39,6 @@ export function SignupPage() {
         }
     };
 
-    const handleSendOtp = async () => {
-        if (!formData.email) {
-            toast.error("Please enter your email first.");
-            return;
-        }
-        setIsSendingOtp(true);
-        try {
-            const res = await fetch(`${API_URL}/api/auth/send-signup-otp`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: formData.email }),
-            });
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText || "Failed to send code.");
-            }
-            toast.info("Verification code sent to your email!");
-            setOtpSent(true);
-        } catch (error: any) {
-            toast.error(error.message);
-        } finally {
-            setIsSendingOtp(false);
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-github p-4 relative overflow-hidden">
@@ -118,61 +84,7 @@ export function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Email</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    type="email"
-                                    placeholder="john@example.com"
-                                    className="bg-black/20 border-white/10 focus:border-primary/50 flex-1"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    required
-                                    disabled={otpSent || isVerified}
-                                />
-                                {!isVerified && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleSendOtp}
-                                        disabled={!formData.email || isSendingOtp || otpSent}
-                                        className="shrink-0"
-                                    >
-                                        {isSendingOtp ? "Sending..." : (otpSent ? "Sent" : "Verify")}
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
 
-                        {otpSent && !isVerified && (
-                            <div className="space-y-2 p-3 border border-primary/20 bg-primary/5 rounded-lg">
-                                <Label className="text-primary">Verification Code</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="000000"
-                                        className="bg-black/20 border-primary/30 focus:border-primary/50 tracking-[0.3em] font-mono flex-1"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                                        maxLength={6}
-                                        required
-                                    />
-                                    <Button
-                                        type="button"
-                                        onClick={() => setIsVerified(true)}
-                                        disabled={otp.length !== 6}
-                                        className="glow-blue font-semibold shrink-0"
-                                    >
-                                        Confirm
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-
-                        {isVerified && (
-                            <div className="text-sm text-blue-400 flex items-center gap-2 mb-2 p-2 bg-blue-500/10 rounded-lg">
-                                <CheckCircle2 className="w-4 h-4" /> Email Verified
-                            </div>
-                        )}
 
                         <div className="space-y-2 mt-4">
                             <Label>Password</Label>
@@ -198,7 +110,7 @@ export function SignupPage() {
                             />
                         </div>
 
-                        <Button type="submit" className="w-full glow-blue font-semibold mt-6" disabled={isLoading || (!isVerified && !isLoading)}>
+                        <Button type="submit" className="w-full glow-green font-semibold mt-6" disabled={isLoading}>
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign Up"}
                         </Button>
                     </form>

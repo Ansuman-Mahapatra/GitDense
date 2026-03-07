@@ -15,11 +15,11 @@ const activityIcons = {
 };
 
 const activityColors = {
-  commit: "text-blue-500",
+  commit: "text-github-green",
   branch: "text-purple-500",
-  merge: "text-blue-500",
+  merge: "text-github-green",
   star: "text-yellow-500",
-  create: "text-primary",
+  create: "text-github-green",
   pull: "text-orange-500",
 };
 

@@ -151,7 +151,7 @@ export function AdminPage() {
 
     // Polling for live user updates and login noitifications
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: any;
 
         const pollUsers = async () => {
             if (!token) return;
@@ -779,7 +779,7 @@ export function AdminPage() {
                                                     <Button
                                                         onClick={handleSavePrivacyPolicy}
                                                         disabled={isSavingPrivacy}
-                                                        className="glow-blue"
+                                                        className="glow-green"
                                                     >
                                                         {isSavingPrivacy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                         <Save className="w-4 h-4 mr-2" />
@@ -813,7 +813,7 @@ export function AdminPage() {
                                                     <Button
                                                         onClick={handleSaveTermsOfService}
                                                         disabled={isSavingTerms}
-                                                        className="glow-blue"
+                                                        className="glow-green"
                                                     >
                                                         {isSavingTerms && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                         <Save className="w-4 h-4 mr-2" />
@@ -867,7 +867,7 @@ export function AdminPage() {
                                             <Button
                                                 onClick={handleChangePassword}
                                                 disabled={!newPassword || isChangingPassword}
-                                                className="w-full glow-blue"
+                                                className="w-full glow-green"
                                             >
                                                 {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                 Change Password

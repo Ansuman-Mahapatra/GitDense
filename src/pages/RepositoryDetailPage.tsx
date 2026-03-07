@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -192,9 +192,24 @@ export function RepositoryDetailPage() {
         }
     };
 
+    const [aiTriggerContext, setAiTriggerContext] = useState<{ text: string, rect: DOMRect | null } | null>(null);
+
+    const handleAiExplain = (content: string) => {
+        setAiTriggerContext({
+            text: content,
+            rect: null // Centered popup
+        });
+    };
+
+    const editorContainerRef = useRef<HTMLDivElement>(null);
+
     return (
-        <div className="flex h-screen bg-background overflow-hidden relative">
-            <InlineAiProvider />
+        <div className="flex h-screen bg-transparent overflow-hidden relative">
+            <InlineAiProvider 
+                containerRef={editorContainerRef} 
+                externalContext={aiTriggerContext}
+                onCloseExternal={() => setAiTriggerContext(null)}
+            />
             {/* Simple Commit Dialog */}
             {showCommitDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -223,7 +238,7 @@ export function RepositoryDetailPage() {
                             </div>
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button variant="outline" onClick={() => setShowCommitDialog(false)}>Cancel</Button>
-                                <Button onClick={handleSave} disabled={isSaving} className="glow-blue">
+                                <Button onClick={handleSave} disabled={isSaving} className="glow-green">
                                     {isSaving ? "Committing..." : "Commit"}
                                 </Button>
                             </div>
@@ -259,7 +274,7 @@ export function RepositoryDetailPage() {
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-500">
                                 {owner} / {repo}
                             </h1>
                             <p className="text-muted-foreground text-sm">Public Repository</p>
@@ -304,7 +319,7 @@ export function RepositoryDetailPage() {
                                     {isEditing && (
                                         <>
                                             <Button size="sm" variant="ghost" onClick={() => { setIsEditing(false); setCodeContent(fileContent); }}>Cancel</Button>
-                                            <Button size="sm" className="glow-blue" onClick={() => setShowCommitDialog(true)}>Save Changes</Button>
+                                            <Button size="sm" className="glow-green" onClick={() => setShowCommitDialog(true)}>Save Changes</Button>
                                         </>
                                     )}
                                 </div>
@@ -332,7 +347,7 @@ export function RepositoryDetailPage() {
                                 </Card>
 
                                 {/* Editor/Viewer */}
-                                <div className="col-span-9 h-full">
+                                <div className="col-span-9 h-full" ref={editorContainerRef}>
                                     {selectedFile ? (
                                         contentLoading ? (
                                             <div className="h-full flex items-center justify-center border rounded-xl glass-card">
@@ -344,6 +359,7 @@ export function RepositoryDetailPage() {
                                                 language={selectedFile.path.split('.').pop() || 'text'}
                                                 readOnly={!isEditing}
                                                 onChange={setCodeContent}
+                                                onAiExplain={handleAiExplain}
                                             />
                                         )
                                     ) : (

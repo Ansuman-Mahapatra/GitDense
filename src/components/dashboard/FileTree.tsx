@@ -157,7 +157,7 @@ function FileTreeNode({ node, level, selectedPath, onSelect }: FileTreeNodeProps
                 )}
                 {node.type === "file" && <span className="w-3.5" />} {/* Spacer */}
 
-                <TypeIcon className={cn("w-4 h-4 shrink-0", node.type === "folder" ? "text-primary/70" : "text-blue-400")} />
+                <TypeIcon className={cn("w-4 h-4 shrink-0", node.type === "folder" ? "text-primary/70" : "text-github-green")} />
 
                 <span className="truncate">{node.name}</span>
             </div>

@@ -8,13 +8,14 @@ import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
-import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { AdminPage } from "./pages/AdminPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { RepositoryDetailPage } from "./pages/RepositoryDetailPage";
 import { AuthSuccessPage } from "./pages/AuthSuccessPage";
 import { HomePage } from "./pages/HomePage";
+import { FeaturesPage } from "./pages/FeaturesPage";
+import { DownloadPage } from "./pages/DownloadPage";
+import { AboutPage } from "./pages/AboutPage";
 import NotFound from "./pages/NotFound";
 import { DemoOne } from "@/components/ui/demo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -73,6 +74,9 @@ function AppRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/download" element={<DownloadPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route
           path="/login"
           element={
@@ -86,22 +90,6 @@ function AppRoutes() {
           element={
             <PublicRoute>
               <SignupPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/reset-password"
-          element={
-            <PublicRoute>
-              <ResetPasswordPage />
             </PublicRoute>
           }
         />
@@ -158,7 +146,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {/* Apply electron wrappers to add padding/border from the edge of the OS window */}
+          {/* Electron wrapper: adds padding so app floats away from OS window border */}
           <div className="electron-wrapper">
             <div className="electron-inner">
               <div className="electron-titlebar" />

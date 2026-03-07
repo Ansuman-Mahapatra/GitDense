@@ -84,7 +84,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         variants={itemVariants}
         className="p-6 flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center glow-blue overflow-hidden">
+        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center glow-green overflow-hidden">
           <img src="/logo1.png" alt="GitTEnz" className="w-full h-full object-cover" />
         </div>
         <span className="text-xl font-bold text-gradient">GitTEnz</span>
@@ -158,7 +158,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                 activeTab === item.id || (window.location.pathname === "/dashboard/admin" && (() => { const t = new URLSearchParams(window.location.search).get("tab") || "overview"; const m: Record<string, string> = { overview: "admin-dashboard", users: "admin-users", feedback: "admin-feedbacks", settings: "admin-settings" }; return item.id === m[t]; })())
-                  ? "bg-primary text-primary-foreground glow-blue"
+                  ? "bg-primary text-primary-foreground glow-green"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >

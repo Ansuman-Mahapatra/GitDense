@@ -22,6 +22,7 @@ export function SettingsPanel() {
     name: "",
     email: "",
     avatarUrl: "",
+    aiApiKey: "",
   });
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function SettingsPanel() {
         name: user.name || user.username || "",
         email: user.email || "",
         avatarUrl: user.avatarUrl || "",
+        aiApiKey: user.aiApiKey || "",
       });
 
       if (user.notificationPreferences) {
@@ -168,6 +170,7 @@ export function SettingsPanel() {
       comingSoon: true, // Flag
       settings: [
         { id: "apiAccess", label: "API Access", description: "Enable API key generation" },
+        { id: "aiApiKey", label: "OpenAI API Key", description: "Your personal key for AI code analysis", isInput: true },
         { id: "webhooks", label: "Webhooks", description: "Configure webhook endpoints" },
         { id: "betaFeatures", label: "Beta Features", description: "Try experimental features" },
       ],
@@ -243,7 +246,7 @@ export function SettingsPanel() {
                   />
                 </div>
                 <div className="pt-2">
-                  <Button onClick={handleSaveProfile} disabled={isLoading} className="glow-blue">
+                  <Button onClick={handleSaveProfile} disabled={isLoading} className="glow-green">
                     {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                     Save Changes
                   </Button>
@@ -291,7 +294,7 @@ export function SettingsPanel() {
                 section.settings.map((setting, index) => (
                   <div key={setting.id}>
                     <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 max-w-[70%]">
                         <Label htmlFor={setting.id} className="text-sm font-medium">
                           {setting.label}
                         </Label>
@@ -299,11 +302,23 @@ export function SettingsPanel() {
                           {setting.description}
                         </p>
                       </div>
-                      <Switch
-                        id={setting.id}
-                        checked={preferences[setting.id]}
-                        onCheckedChange={() => handleToggle(setting.id)}
-                      />
+                      {/* @ts-ignore */}
+                      {setting.isInput ? (
+                        <Input
+                           id={setting.id}
+                           type="password"
+                           placeholder="sk-..."
+                           className="w-48 h-8 text-xs bg-black/20"
+                           value={formData.aiApiKey}
+                           onChange={(e) => setFormData(prev => ({ ...prev, aiApiKey: e.target.value }))}
+                        />
+                      ) : (
+                        <Switch
+                          id={setting.id}
+                          checked={preferences[setting.id]}
+                          onCheckedChange={() => handleToggle(setting.id)}
+                        />
+                      )}
                     </div>
                     {index < section.settings.length - 1 && (
                       <Separator className="mt-4" />

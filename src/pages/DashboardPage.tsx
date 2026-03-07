@@ -222,15 +222,16 @@ export function DashboardPage() {
   const [prevEventCount, setPrevEventCount] = useState(0);
 
   useEffect(() => {
-    if (activityEvents && activityEvents.length > 0) {
+    const safeEvents = Array.isArray(activityEvents) ? activityEvents : [];
+    if (safeEvents.length > 0) {
       // On first load, just set the count
       if (prevEventCount === 0) {
-        setPrevEventCount(activityEvents.length);
+        setPrevEventCount(safeEvents.length);
       }
       // If new events arrived
-      else if (activityEvents.length > prevEventCount) {
-        const newEventsCount = activityEvents.length - prevEventCount;
-        const latestEvent = activityEvents[0]; // Assuming API returns sorted by latest
+      else if (safeEvents.length > prevEventCount) {
+        const newEventsCount = safeEvents.length - prevEventCount;
+        const latestEvent = safeEvents[0]; // Assuming API returns sorted by latest
 
         // Find simpler message
         let eventType = "Activity";
@@ -245,7 +246,7 @@ export function DashboardPage() {
           });
         }
 
-        setPrevEventCount(activityEvents.length);
+        setPrevEventCount(safeEvents.length);
       }
     }
   }, [activityEvents, prevEventCount, user]);
@@ -264,6 +265,12 @@ export function DashboardPage() {
     refetchInterval: 5000,
   });
 
+  // Safely handle API objects vs arrays
+  let safeEvents: any[] = [];
+  if (Array.isArray(activityEvents)) {
+    safeEvents = activityEvents;
+  }
+  
   const calculateRealActivity = () => {
     // If no events loaded yet, just return zeros for the timeframe
     // This prevents "empty" chart flashing if loading is slow
@@ -281,8 +288,8 @@ export function DashboardPage() {
       activityMap[key] = 0;
     }
 
-    if (activityEvents) {
-      activityEvents.forEach((event: any) => {
+    if (safeEvents && safeEvents.length > 0) {
+      safeEvents.forEach((event: any) => {
         // We only care about PushEvent (commits), but also include specific other events for "User Activity"
         // Parsing dates from API which are UTC
         const eventDate = new Date(event.created_at);
@@ -324,13 +331,14 @@ export function DashboardPage() {
 
   const realActivityData = calculateRealActivity();
 
-  const totalPushes = activityEvents
-    ? activityEvents.filter((e: any) => e.type === "PushEvent").length
-    : 0;
+  // Filter for Last 90 Days activity metrics to capture the user's historical pushes
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  
+  const last90DaysEvents = safeEvents.filter((e: any) => new Date(e.created_at) >= ninetyDaysAgo);
 
-  const totalPRs = activityEvents
-    ? activityEvents.filter((e: any) => e.type === "PullRequestEvent").length
-    : 0;
+  const totalPushes = last90DaysEvents.filter((e: any) => e.type === "PushEvent").length;
+  const totalPRs = last90DaysEvents.filter((e: any) => e.type === "PullRequestEvent").length;
 
   // Filter Data based on Search Query
   const filteredRepos = displayRepos.filter((repo: any) => {
@@ -343,7 +351,7 @@ export function DashboardPage() {
     );
   });
 
-  const filteredActivity = activityEvents ? activityEvents.filter((event: any) => {
+  const filteredActivity = safeEvents.filter((event: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
 
@@ -364,7 +372,7 @@ export function DashboardPage() {
     }
 
     return false;
-  }) : [];
+  });
 
   const filteredLocalRepos = localReposResults.filter((repo: any) => {
     if (!searchQuery) return true;
@@ -374,8 +382,8 @@ export function DashboardPage() {
 
   const statsData = [
     { title: "Total Repositories", value: displayRepos.length, icon: FolderGit2, trend: "Synced from GitHub", trendUp: true },
-    { title: "Total Pushes", value: totalPushes, icon: GitCommit, trend: "Recent Activity", trendUp: totalPushes > 0 },
-    { title: "Total Pull Requests", value: totalPRs, icon: GitBranch, trend: "Recent Activity", trendUp: totalPRs > 0 },
+    { title: "Total Pushes", value: totalPushes, icon: GitCommit, trend: "Last 90 Days", trendUp: totalPushes > 0 },
+    { title: "Total Pull Requests", value: totalPRs, icon: GitBranch, trend: "Last 90 Days", trendUp: totalPRs > 0 },
     { title: "Total Open Issues", value: displayRepos.reduce((acc: number, r: any) => acc + (r.openIssuesCount || 0), 0), icon: GitCommit, trend: "Needs attention", trendUp: false },
   ];
 
@@ -435,8 +443,8 @@ export function DashboardPage() {
                   const recentRepoNames = new Set<string>();
                   const recentRepos: any[] = [];
 
-                  if (activityEvents) {
-                    activityEvents.forEach((event: any) => {
+                  if (safeEvents && safeEvents.length > 0) {
+                    safeEvents.forEach((event: any) => {
                       if (event.repo && !recentRepoNames.has(event.repo.name)) {
                         recentRepoNames.add(event.repo.name);
                         // Find full repo details from displayRepos if available
@@ -512,9 +520,11 @@ export function DashboardPage() {
 
             {filteredRepos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filteredRepos.map((repo: any, index: number) => (
-                  <RepositoryCard key={repo.id} repository={repo} index={index} />
-                ))}
+                {[...filteredRepos]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((repo: any, index: number) => (
+                    <RepositoryCard key={repo.id} repository={repo} index={index} />
+                  ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
@@ -555,7 +565,7 @@ export function DashboardPage() {
                   </p>
                   <Button
                     size="lg"
-                    className="glow-blue gap-2"
+                    className="glow-green gap-2"
                     onClick={async () => {
                       try {
                         // @ts-ignore - File System Access API
@@ -650,9 +660,11 @@ export function DashboardPage() {
           <motion.div key="starred" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <h2 className="text-2xl font-bold">Starred Repositories</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {starredRepos?.map((repo: any, index: number) => (
-                <RepositoryCard key={repo.id} repository={repo} index={index} />
-              ))}
+              {(starredRepos || [])
+                .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                .map((repo: any, index: number) => (
+                  <RepositoryCard key={repo.id} repository={repo} index={index} />
+                ))}
             </div>
           </motion.div>
         );
@@ -737,7 +749,7 @@ export function DashboardPage() {
             <AlertDialogCancel onClick={dialogState.onCancel} className="hover:bg-white/5 border-white/10">
               {dialogState.cancelText || "Cancel"}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={dialogState.onConfirm} className="glow-blue flex-1 sm:flex-none">
+            <AlertDialogAction onClick={dialogState.onConfirm} className="glow-green flex-1 sm:flex-none">
               {dialogState.confirmText || "Yes"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -750,9 +762,10 @@ export function DashboardPage() {
         onClose={() => setAnalyzerParams(null)} 
         dirHandle={analyzerParams?.dirHandle || null} 
         username={user?.username || 'user'}
-        onContinue={(analysis) => {
-           if(analyzerParams?.dirHandle) {
-             const newRepo = {
+        token={token}
+        onContinue={async (analysis) => {
+           if(analyzerParams?.dirHandle && token) {
+             const newRepoData = {
                 name: analyzerParams.dirHandle.name,
                 description: `Local ${analysis.language} project`,
                 language: analysis.language,
@@ -760,11 +773,30 @@ export function DashboardPage() {
                 stargazersCount: 0,
                 forksCount: 0,
                 updatedAt: new Date().toISOString(),
-                handle: analyzerParams.dirHandle
+                local: true,
+                localPath: "Local Project" // Placeholder for now
              };
-             // @ts-ignore
-             setLocalReposResults([newRepo]);
-             toast.success("Project successfully onboarded and loaded!");
+             
+             try {
+                const res = await fetch(`${API_URL}/api/repos/local-save`, {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                  },
+                  body: JSON.stringify(newRepoData)
+                });
+                
+                if(res.ok) {
+                   const savedRepo = await res.json();
+                   // @ts-ignore
+                   setLocalReposResults(prev => [...prev, { ...savedRepo, handle: analyzerParams.dirHandle }]);
+                   toast.success("Project successfully onboarded and synced!");
+                }
+             } catch (e) {
+                console.error("Failed to save local repo", e);
+                toast.error("Saved locally but failed to sync with GitTEnz server.");
+             }
            }
            setAnalyzerParams(null);
         }}

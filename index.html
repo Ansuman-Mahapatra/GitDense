@@ -9,16 +9,24 @@
     <meta name="author" content="GitTEnz" />
 
     <meta property="og:title" content="GitTEnz" />
-    <meta property="og:description" content="Commits, decoded. Your intelligent GitHub companion." />
+    <meta
+      property="og:description"
+      content="Commits, decoded. Your intelligent GitHub companion."
+    />
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="GitTEnz" />
-    <meta name="twitter:description" content="Commits, decoded. Your intelligent GitHub companion." />
+    <meta
+      name="twitter:description"
+      content="Commits, decoded. Your intelligent GitHub companion."
+    />
   </head>
 
   <body>
     <div id="root"></div>
+    <!-- Unregister any stale service workers from previous builds -->
+    <script src="/sw-unregister.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

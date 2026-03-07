@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
-const COLORS = ["#00E676", "#2979FF", "#FFC400", "#FF3D00", "#E040FB"];
+const COLORS = ["#00E676", "#34D399", "#FFC400", "#FF3D00", "#E040FB"];
 
 interface LanguageData {
     name: string;

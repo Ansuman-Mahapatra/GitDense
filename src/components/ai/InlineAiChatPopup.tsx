@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, useDragControls } from "framer-motion";
 import { Bot, Send, X, Trash2, Sparkles, Code2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const controls = useDragControls();
   const [isContextCollapsed, setIsContextCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +103,11 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to get AI response");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ response: "Failed to connect to AI server." }));
+        throw new Error(errorData.response || "Failed to get AI response");
+      }
+      
       const data = await res.json();
 
       if (data.sessionId) {
@@ -116,12 +121,12 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Inline AI error:", error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Failed to connect to AI service. Please check if the backend is running.",
+        content: error.message || "Failed to connect to AI service. Please check if the backend is running.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -159,6 +164,10 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
 
   return (
     <motion.div
+      drag
+      dragControls={controls}
+      dragListener={false}
+      dragMomentum={false}
       initial={{ opacity: 0, scale: 0.92, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.92, y: 10 }}
@@ -169,18 +178,20 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
         backdropFilter: "blur(20px) saturate(200%)",
         backgroundColor: "hsl(var(--card) / 0.95)",
       }}
-      onMouseDown={(e) => e.stopPropagation()}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5">
+      {/* Header / Drag Handle */}
+      <div 
+        className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 cursor-move active:cursor-grabbing"
+        onPointerDown={(e) => controls.start(e)}
+      >
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
-            <Bot className="w-3.5 h-3.5 text-primary" />
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+            <Bot className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <div>
             <h3 className="text-sm font-semibold leading-none">AI Assistant</h3>
             <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               Contextual Mode
             </p>
           </div>
@@ -209,12 +220,12 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
 
       {/* Selected Text Context */}
       <div
-        className="px-4 py-2.5 border-b border-white/5 bg-primary/5 cursor-pointer"
+        className="px-4 py-2.5 border-b border-white/5 bg-emerald-500/5 cursor-pointer"
         onClick={() => setIsContextCollapsed(!isContextCollapsed)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Code2 className="w-3 h-3 text-primary" />
+            <Code2 className="w-3 h-3 text-emerald-400" />
             <span className="font-medium">Selected Context</span>
           </div>
           <ChevronDown
@@ -235,8 +246,8 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
         <div className="space-y-3">
           {messages.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                <Sparkles className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 Ask AI about this selection...
@@ -251,7 +262,7 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
                   <button
                     key={action.label}
                     onClick={() => sendMessage(action.prompt)}
-                    className="px-3 py-1.5 text-[11px] font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
+                    className="px-3 py-1.5 text-[11px] font-medium rounded-full bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors"
                   >
                     {action.label}
                   </button>
@@ -268,7 +279,7 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
               <div
                 className={`max-w-[85%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-sm"
+                    ? "bg-emerald-600 text-white rounded-br-sm shadow-lg shadow-emerald-900/20"
                     : "bg-muted/60 border border-white/5 rounded-bl-sm"
                 }`}
               >
@@ -301,14 +312,14 @@ export function InlineAiChatPopup({ selectedText, anchorRect, onClose }: InlineA
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about this selection..."
-            className="flex-1 h-9 text-sm bg-black/20 border-white/10 focus-visible:ring-primary/50 rounded-xl pr-10"
+            className="flex-1 h-9 text-sm bg-black/20 border-white/10 focus-visible:ring-emerald-500/50 rounded-xl pr-10"
             disabled={loading}
           />
           <Button
             type="submit"
             size="icon"
             disabled={loading || !input.trim()}
-            className="absolute right-1 h-7 w-7 rounded-lg bg-primary/20 hover:bg-primary/40 text-primary"
+            className="absolute right-1 h-7 w-7 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400"
           >
             <Send className="w-3 h-3" />
           </Button>

@@ -92,7 +92,7 @@ export function LoginPage() {
         <div className="flex flex-col items-center gap-8">
           {/* Logo Section */}
           <Link to="/" className="group transition-transform hover:scale-110">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center glow-blue border border-white/10 backdrop-blur-md">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center glow-green border border-white/10 backdrop-blur-md">
               <img src="/logo1.png" alt="GitTEnz" className="w-12 h-12 object-contain" />
             </div>
           </Link>
@@ -124,7 +124,7 @@ export function LoginPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wider opacity-70">Password</Label>
-                    <Link to="/forgot-password" className="text-[10px] text-primary uppercase font-bold tracking-widest cursor-pointer hover:underline">Forgot?</Link>
+                    <button type="button" onClick={() => toast.info('Please contact the system administrator to reset your password.')} className="text-[10px] text-primary uppercase font-bold tracking-widest cursor-pointer hover:underline bg-transparent border-none p-0">Forgot?</button>
                   </div>
                   <Input
                     type="password"
@@ -136,7 +136,7 @@ export function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-12 rounded-xl glow-blue font-bold text-base transition-all hover:scale-[1.02]" disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 rounded-xl glow-green font-bold text-base transition-all hover:scale-[1.02]" disabled={isLoading}>
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
                 </Button>
 
@@ -165,7 +165,7 @@ export function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-14 rounded-xl glow-blue font-bold text-lg transition-all hover:scale-[1.02]" disabled={isLoading}>
+                <Button type="submit" className="w-full h-14 rounded-xl glow-green font-bold text-lg transition-all hover:scale-[1.02]" disabled={isLoading}>
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Continue"}
                 </Button>
 
@@ -187,7 +187,7 @@ export function LoginPage() {
                    <p className="text-sm text-muted-foreground">For security, you need to verify your account with GitHub before proceeding.</p>
                  </div>
                  <Button
-                  className="w-full h-14 rounded-xl gap-3 glow-blue transition-all hover:scale-[1.02]"
+                  className="w-full h-14 rounded-xl gap-3 glow-green transition-all hover:scale-[1.02]"
                   onClick={signInWithGitHub}
                   type="button"
                  >

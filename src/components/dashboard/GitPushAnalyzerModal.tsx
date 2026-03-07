@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ShieldAlert, GitCommit, FileCode2, CheckCircle2, Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { API_URL } from "@/config";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface GitPushAnalyzerModalProps {
@@ -12,9 +13,10 @@ interface GitPushAnalyzerModalProps {
   dirHandle: any | null;
   onContinue: (analysisResults: any) => void;
   username: string;
+  token?: string | null;
 }
 
-export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, username }: GitPushAnalyzerModalProps) {
+export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, username, token }: GitPushAnalyzerModalProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [analysis, setAnalysis] = useState<any>(null);
@@ -133,20 +135,47 @@ export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, u
         }
       }
 
-      // Fix 3: Add Origin
-      if (!analysis.hasOrigin) {
-        const configHandle = await updatedGitDir.getFileHandle('config', { create: true });
-        const writable = await configHandle.createWritable();
-        const originUrl = `https://github.com/${username}/${dirHandle.name}.git`;
-        await writable.write(`[remote "origin"]\nurl = ${originUrl}\n`);
-        await writable.close();
-        toast.success(`Linked origin to github.com/${username}/${dirHandle.name}`);
+      // Fix 3: Add Origin & Create on GitHub
+      if (!analysis.hasOrigin || analysis.isGit) {
+        // Ensure GitHub Repo exists via API
+        if (token) {
+           try {
+             await fetch(`${API_URL}/api/repos`, {
+               method: "POST",
+               headers: {
+                 "Content-Type": "application/json",
+                 Authorization: `Bearer ${token}`
+               },
+               body: JSON.stringify({
+                 name: dirHandle.name,
+                 description: `Onboarded from GitDense: ${analysis.language} project`,
+                 private: false
+               })
+             });
+             toast.success(`GitHub repository synchronized: ${username}/${dirHandle.name}`);
+           } catch (e) {
+             console.error("GitHub creation failed or already exists", e);
+           }
+        }
+
+        // Locally set origin
+        try {
+          const configHandle = await updatedGitDir.getFileHandle('config', { create: true });
+          const writable = await configHandle.createWritable();
+          const originUrl = `https://github.com/${username}/${dirHandle.name}.git`;
+          // Standard git config format
+          await writable.write(`[remote "origin"]\n\turl = ${originUrl}\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n`);
+          await writable.close();
+          toast.success(`Linked local origin to github.com/${username}/${dirHandle.name}`);
+        } catch (e) {
+          console.warn("Could not write git config locally", e);
+        }
       }
 
       onContinue({ ...analysis, isGit: true, hasOrigin: true, gitDirHandle: updatedGitDir });
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to apply automatic fixes. Please check permissions.");
+    } catch (e: any) {
+      console.error("Fix application failed", e);
+      toast.error("Failed to apply some fixes: " + e.message);
     }
   };
 
@@ -178,7 +207,7 @@ export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, u
                 
                 {/* Project Overview */}
                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <FileCode2 className="w-6 h-6 text-blue-400" />
+                  <FileCode2 className="w-6 h-6 text-emerald-400" />
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Detected Environment</p>
                     <p className="text-sm font-medium">{analysis.language} Project</p>
@@ -192,13 +221,13 @@ export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, u
                   </h4>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
-                      {analysis.isGit ? <CheckCircle2 className="w-4 h-4 text-blue-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}
+                      {analysis.isGit ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}
                       <span className={analysis.isGit ? "text-foreground" : "text-muted-foreground"}>
                         {analysis.isGit ? "Git is initialized" : "Git is NOT initialized"}
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      {analysis.hasOrigin ? <CheckCircle2 className="w-4 h-4 text-blue-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}
+                      {analysis.hasOrigin ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}
                       <span className={analysis.hasOrigin ? "text-foreground" : "text-muted-foreground"}>
                         {analysis.hasOrigin ? "Remote origin linked" : "No remote origin found"}
                       </span>
@@ -222,9 +251,9 @@ export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, u
                 )}
                 
                 {analysis.sensitiveFilesFound.length === 0 && !hasIssues && (
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                    <span className="text-sm text-blue-500 font-medium">Project is fully clean and ready to publish!</span>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <span className="text-sm text-emerald-500 font-medium">Project is fully clean and ready to publish!</span>
                   </div>
                 )}
 
@@ -239,7 +268,7 @@ export function GitPushAnalyzerModal({ isOpen, onClose, dirHandle, onContinue, u
               Cancel
             </Button>
             {hasIssues ? (
-              <Button onClick={handleApplyFixes} className="glow-blue gap-2">
+              <Button onClick={handleApplyFixes} className="glow-green gap-2">
                 <ShieldCheck className="w-4 h-4" /> Auto-Fix & Proceed
               </Button>
             ) : (

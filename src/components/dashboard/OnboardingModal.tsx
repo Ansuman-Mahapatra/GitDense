@@ -191,7 +191,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             (step === 3 && !data.primaryLanguage) ||
                             (step === 4 && !data.goal)
                         }
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-emerald-500/20"
                     >
                         {step === totalSteps ? "Finish Setup" : "Next Step"}
                     </Button>
