@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import { DemoOne } from "@/components/ui/demo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ServerWakeUp } from "./components/layout/ServerWakeUp";
+import { GitHubVerificationOverlay } from "./components/auth/GitHubVerificationOverlay";
 // Desktop always uses HashRouter — required for Electron file:// routing
 
 const queryClient = new QueryClient();
@@ -156,6 +157,7 @@ const App = () => (
               <HashRouter>
                 <AuthProvider>
                   <ServerWakeUp>
+                    <GitHubVerificationOverlay />
                     <AppRoutes />
                   </ServerWakeUp>
                 </AuthProvider>
