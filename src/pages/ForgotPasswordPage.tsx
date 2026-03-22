@@ -63,7 +63,7 @@ export function ForgotPasswordPage() {
                     {/* Logo Section */}
                     <Link to="/" className="group transition-transform hover:scale-110">
                         <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center glow-blue border border-white/10 backdrop-blur-md">
-                            <img src="/logo1.png" alt="GitTEnz" className="w-12 h-12 object-contain" />
+                            <img src="./logo1.png" alt="GitTEnz" className="w-12 h-12 object-contain" />
                         </div>
                     </Link>
 
