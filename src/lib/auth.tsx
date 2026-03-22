@@ -115,12 +115,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGitHub = () => {
-    // Pass current app origin as redirect_origin in state param.
-    // The backend reads this and redirects back to the correct frontend (desktop or web)
-    // after GitHub OAuth completes, instead of always going to the live website.
-    const currentOrigin = encodeURIComponent(window.location.origin);
-    const state = `redirect_origin=${currentOrigin}`;
-    window.location.href = `${API_URL}/oauth2/authorization/github?state=${encodeURIComponent(state)}`;
+    // Open GitHub OAuth in a new browser tab — the callback is registered to gittenz.vercel.app
+    // so we cannot redirect in the same window (the desktop app would lose its state).
+    // Instead: open a tab, pass source=desktop so the website shows "close this tab",
+    // and the desktop overlay polls the backend waiting for verification to complete.
+    const state = `source=desktop`;
+    const oauthUrl = `${API_URL}/oauth2/authorization/github?state=${encodeURIComponent(state)}`;
+    window.open(oauthUrl, "_blank");
   };
 
   const signInWithEmail = async (data: any) => {
