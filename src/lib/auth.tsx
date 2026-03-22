@@ -115,7 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGitHub = () => {
-    window.location.href = `${API_URL}/oauth2/authorization/github`;
+    // Pass current app origin as redirect_origin in state param.
+    // The backend reads this and redirects back to the correct frontend (desktop or web)
+    // after GitHub OAuth completes, instead of always going to the live website.
+    const currentOrigin = encodeURIComponent(window.location.origin);
+    const state = `redirect_origin=${currentOrigin}`;
+    window.location.href = `${API_URL}/oauth2/authorization/github?state=${encodeURIComponent(state)}`;
   };
 
   const signInWithEmail = async (data: any) => {
