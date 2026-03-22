@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
 
-    --primary: 142 76% 36%;
+    --primary: 200 90% 45%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 90%;
@@ -25,7 +25,7 @@
     --muted: 220 14% 94%;
     --muted-foreground: 220 10% 46%;
 
-    --accent: 142 76% 36%;
+    --accent: 200 90% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -33,28 +33,28 @@
 
     --border: 220 13% 87%;
     --input: 220 13% 87%;
-    --ring: 142 76% 36%;
+    --ring: 200 90% 45%;
 
     --radius: 0.75rem;
 
-    /* GitTEnz custom tokens - Sync with GREEN web version */
-    --github-green: 142 76% 36%;
-    --github-purple: 142 76% 30%;
-    --github-blue: 142 76% 25%;
-    --github-orange: 142 76% 36%;
-    --github-red: 142 76% 40%;
+    /* GitTEnz custom tokens - Light Blue Theme */
+    --github-green: 200 90% 45%;
+    --github-purple: 250 80% 60%;
+    --github-blue: 200 90% 45%;
+    --github-orange: 30 90% 55%;
+    --github-red: 0 80% 55%;
 
-    --glow-green: 142 76% 36%;
-    --glow-purple: 142 76% 36%;
+    --glow-green: 200 90% 45%;
+    --glow-purple: 250 80% 60%;
 
     --sidebar-background: 220 16% 98%;
     --sidebar-foreground: 220 20% 20%;
-    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary: 200 90% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 94%;
     --sidebar-accent-foreground: 220 20% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 142 76% 36%;
+    --sidebar-ring: 200 90% 45%;
   }
 
   .dark {
@@ -67,7 +67,7 @@
     --popover: 220 20% 9%;
     --popover-foreground: 220 14% 96%;
 
-    --primary: 142 76% 46%;
+    --primary: 200 90% 60%;
     --primary-foreground: 220 20% 6%;
 
     --secondary: 220 20% 14%;
@@ -76,7 +76,7 @@
     --muted: 220 20% 14%;
     --muted-foreground: 220 14% 65%;
 
-    --accent: 142 76% 46%;
+    --accent: 200 90% 60%;
     --accent-foreground: 220 20% 6%;
 
     --destructive: 0 72% 51%;
@@ -84,25 +84,25 @@
 
     --border: 220 20% 18%;
     --input: 220 20% 18%;
-    --ring: 142 76% 46%;
+    --ring: 200 90% 60%;
 
-    --github-green: 142 76% 46%;
-    --github-purple: 142 76% 40%;
-    --github-blue: 142 76% 35%;
-    --github-orange: 142 76% 46%;
-    --github-red: 142 76% 50%;
+    --github-green: 200 90% 60%;
+    --github-purple: 250 80% 65%;
+    --github-blue: 200 90% 60%;
+    --github-orange: 30 90% 60%;
+    --github-red: 0 80% 60%;
 
-    --glow-green: 142 76% 46%;
-    --glow-purple: 142 76% 46%;
+    --glow-green: 200 90% 60%;
+    --glow-purple: 250 80% 65%;
 
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 142 76% 46%;
+    --sidebar-primary: 200 90% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 20% 14%;
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 220 20% 14%;
-    --sidebar-ring: 142 76% 46%;
+    --sidebar-ring: 200 90% 60%;
   }
 }
 

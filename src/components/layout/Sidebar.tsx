@@ -10,7 +10,8 @@ import {
   Bell,
   Users,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -27,6 +28,7 @@ const userMenuItems = [
   { id: "dashboard", icon: Home, label: "Dashboard" },
   { id: "repositories", icon: FolderGit2, label: "Repositories" },
   { id: "local-repos", icon: FolderGit2, label: "Local Repos" },
+  { id: "deleted-repos", icon: Trash2, label: "Deleted Repos" },
   { id: "activity", icon: History, label: "Activity" },
   { id: "starred", icon: Star, label: "Starred" },
   { id: "settings", icon: Settings, label: "Settings" },

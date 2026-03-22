@@ -1,9 +1,9 @@
 directories:
   output: dist-electron
   buildResources: public
-appId: com.gittenz.desktop
-productName: GitTEnz
-copyright: Copyright © 2025 GitTEnz
+appId: com.gitdense.desktop
+productName: GitDense
+copyright: Copyright © 2025 GitDense
 compression: maximum
 files:
   - filter:
@@ -16,7 +16,7 @@ win:
       arch:
         - x64
   icon: public/favicon.ico
-  artifactName: GitTEnz-Setup-${version}.exe
+  artifactName: GitDense-Setup-${version}.exe
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -24,10 +24,10 @@ nsis:
   uninstallerIcon: public/favicon.ico
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: GitTEnz
+  shortcutName: GitDense
   perMachine: false
   runAfterFinish: true
-  menuCategory: GitTEnz
+  menuCategory: GitDense
 mac:
   target: dmg
   icon: public/favicon.ico

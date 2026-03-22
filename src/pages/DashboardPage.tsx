@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { API_URL } from "@/config";
 import { motion } from "framer-motion";
-import { FolderGit2, GitBranch, GitCommit, Star, Menu, Search } from "lucide-react";
+import { FolderGit2, GitBranch, GitCommit, Star, Menu, Search, Rocket, RefreshCw, Bell, Trash2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { RepositoryCard } from "@/components/dashboard/RepositoryCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -86,12 +86,32 @@ export function DashboardPage() {
     });
   };
 
+  // ─── Caching Helpers (User-Specific) ──────────────────────────
+  const getCached = (key: string) => {
+    try {
+      const userKey = user?.username || "anon";
+      const cached = localStorage.getItem(`gittenz_cache_${userKey}_${key}`);
+      return cached ? JSON.parse(cached) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const setCached = (key: string, data: any) => {
+    try {
+      const userKey = user?.username;
+      if (!userKey) return;
+      localStorage.setItem(`gittenz_cache_${userKey}_${key}`, JSON.stringify(data));
+    } catch (e) {
+      console.warn("Failed to cache data", e);
+    }
+  };
+
   // Clear search when switching tabs
   useEffect(() => {
     setSearchQuery("");
   }, [activeTab]);
 
-  const { token, user, setToken } = useAuth(); // Assuming setToken or setUser is available or we trigger refetch?
+  const { token, user, setToken, signOut } = useAuth();
   // We can't update user easily in AuthContext without a setUser exposed. 
   // For now we just hide modal, next reload will be fine if backend updated.
 
@@ -171,23 +191,44 @@ export function DashboardPage() {
   };
 
 
-  const { data: repositories, isLoading } = useQuery({
+  const { data: repositories, isLoading, refetch: refetchRepos } = useQuery({
     queryKey: ["repositories"],
+    initialData: getCached("repos"),
     queryFn: async () => {
       if (!token) return [];
       const res = await fetch(`${API_URL}/api/repos`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error("Failed to fetch");
-      return res.json();
+      if (!res.ok) {
+        if (res.status === 401) signOut();
+        throw new Error("Failed to fetch repositories");
+      }
+      const data = await res.json();
+      setCached("repos", data);
+      return data;
     },
     enabled: !!token,
+    refetchInterval: 300000, 
   });
 
-
+  const { data: deletedRepositoriesData, refetch: refetchDeleted } = useQuery({
+    queryKey: ["deleted-repositories"],
+    queryFn: async () => {
+      if (!token) return [];
+      const res = await fetch(`${API_URL}/api/repos/deleted`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to fetch deleted repositories");
+      return await res.json();
+    },
+    enabled: !!token,
+    refetchInterval: 300000,
+  });
 
   // Data processing
-  const displayRepos = repositories || [];
+  const activeRepos = repositories || [];
+  const deletedRepos = deletedRepositoriesData || [];
+  const displayRepos = activeRepos; // Default list and charts focus on live projects
 
   // FIXED: Use a Map to aggregate totals across ALL repos for accuracy
   const languageMap = new Map<string, number>();
@@ -200,22 +241,54 @@ export function DashboardPage() {
 
   const realLanguageData = Array.from(languageMap.entries())
     .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
     .slice(0, 10); // Show top 10
+    
+  // Fetch Notifications
+  const { data: notifications, refetch: refetchNotifications } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      if (!token) return [];
+      const res = await fetch(`${API_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to fetch notifications");
+      return await res.json();
+    },
+    enabled: !!token,
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  const markNotificationRead = async (id: string) => {
+    try {
+      await fetch(`${API_URL}/api/notifications/${id}/read`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      refetchNotifications();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Fetch Real GitHub Activity
   const { data: activityEvents } = useQuery({
     queryKey: ["github-activity", activityTimeframe],
+    initialData: getCached(`activity_${activityTimeframe}`),
     queryFn: async () => {
       if (!token) return [];
       const res = await fetch(`${API_URL}/api/user/activity`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) return [];
-      return res.json();
+      if (!res.ok) {
+        if (res.status === 401) signOut();
+        throw new Error("Failed to fetch activity");
+      }
+      const data = await res.json();
+      setCached(`activity_${activityTimeframe}`, data);
+      return data;
     },
     enabled: !!token,
-    refetchInterval: 5000,
+    refetchInterval: 300000,
   });
 
   // Toaster Notification for Real-Time Activity
@@ -253,16 +326,22 @@ export function DashboardPage() {
 
   const { data: starredRepos } = useQuery({
     queryKey: ["starred-repositories"],
+    initialData: getCached("starred"),
     queryFn: async () => {
       if (!token) return [];
       const res = await fetch(`${API_URL}/api/user/starred`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) return [];
-      return res.json();
+      if (!res.ok) {
+        if (res.status === 401) signOut();
+        throw new Error("Failed to fetch starred repos");
+      }
+      const data = await res.json();
+      setCached("starred", data);
+      return data;
     },
     enabled: !!token,
-    refetchInterval: 5000,
+    refetchInterval: 300000,
   });
 
   // Safely handle API objects vs arrays
@@ -341,15 +420,17 @@ export function DashboardPage() {
   const totalPRs = last90DaysEvents.filter((e: any) => e.type === "PullRequestEvent").length;
 
   // Filter Data based on Search Query
-  const filteredRepos = displayRepos.filter((repo: any) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      repo.name?.toLowerCase().includes(query) ||
-      repo.description?.toLowerCase().includes(query) ||
-      repo.language?.toLowerCase().includes(query)
-    );
-  });
+  const filteredRepos = displayRepos
+    .filter((repo: any) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        repo.name?.toLowerCase().includes(query) ||
+        repo.description?.toLowerCase().includes(query) ||
+        repo.language?.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const filteredActivity = safeEvents.filter((event: any) => {
     if (!searchQuery) return true;
@@ -374,17 +455,19 @@ export function DashboardPage() {
     return false;
   });
 
-  const filteredLocalRepos = localReposResults.filter((repo: any) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return repo.name.toLowerCase().includes(query);
-  });
+  const filteredLocalRepos = localReposResults
+    .filter((repo: any) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return repo.name.toLowerCase().includes(query);
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const statsData = [
     { title: "Total Repositories", value: displayRepos.length, icon: FolderGit2, trend: "Synced from GitHub", trendUp: true },
     { title: "Total Pushes", value: totalPushes, icon: GitCommit, trend: "Last 90 Days", trendUp: totalPushes > 0 },
     { title: "Total Pull Requests", value: totalPRs, icon: GitBranch, trend: "Last 90 Days", trendUp: totalPRs > 0 },
-    { title: "Total Open Issues", value: displayRepos.reduce((acc: number, r: any) => acc + (r.openIssuesCount || 0), 0), icon: GitCommit, trend: "Needs attention", trendUp: false },
+    { title: "Unread Notifications", value: notifications?.filter((n: any) => !n.read).length || 0, icon: Bell, trend: "New alerts", trendUp: (notifications?.filter((n: any) => !n.read).length || 0) > 0 },
   ];
 
   if (isLoading) {
@@ -406,6 +489,21 @@ export function DashboardPage() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
+            {/* Sync Data Button (Top Left) */}
+            <div className="flex justify-start">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 text-xs h-8 bg-background/50 hover:bg-primary/10 border-white/10"
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                Sync Data
+              </Button>
+            </div>
+
             {/* Onboarding Modal */}
             <OnboardingModal isOpen={showOnboarding} onClose={handleOnboardingComplete} />
 
@@ -447,17 +545,15 @@ export function DashboardPage() {
                     safeEvents.forEach((event: any) => {
                       if (event.repo && !recentRepoNames.has(event.repo.name)) {
                         recentRepoNames.add(event.repo.name);
-                        // Find full repo details from displayRepos if available
                         const fullRepo = displayRepos.find((r: any) => r.full_name === event.repo.name || r.name === event.repo.name);
                         if (fullRepo) {
                           recentRepos.push(fullRepo);
                         } else {
-                          // If not in fetch list (maybe public repo not owned), construct partial
                           recentRepos.push({
                             id: event.repo.id,
                             name: event.repo.name,
                             description: "Recently active",
-                            language: "Unknown", // API event doesn't always have lang
+                            language: "Unknown",
                             stargazers_count: 0,
                             forks_count: 0,
                             updated_at: event.created_at
@@ -465,6 +561,15 @@ export function DashboardPage() {
                         }
                       }
                     });
+                  }
+
+                  // Fallback: If no activity found, show latest updated repos from the general list
+                  if (recentRepos.length === 0 && displayRepos.length > 0) {
+                    const sortedRepos = [...displayRepos].sort((a, b) => 
+                      new Date(b.updated_at || b.pushed_at || 0).getTime() - 
+                      new Date(a.updated_at || a.pushed_at || 0).getTime()
+                    );
+                    recentRepos.push(...sortedRepos.slice(0, 4));
                   }
 
                   // Take top 4
@@ -520,11 +625,9 @@ export function DashboardPage() {
 
             {filteredRepos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...filteredRepos]
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((repo: any, index: number) => (
-                    <RepositoryCard key={repo.id} repository={repo} index={index} />
-                  ))}
+                {filteredRepos.map((repo: any, index: number) => (
+                  <RepositoryCard key={repo.id} repository={repo} index={index} />
+                ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
@@ -632,6 +735,66 @@ export function DashboardPage() {
           </motion.div>
         );
 
+      case "notifications":
+        return (
+          <motion.div key="notifications" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Notifications</h2>
+                <p className="text-muted-foreground text-sm">Read notifications will be automatically cleared on next refresh.</p>
+              </div>
+              {(notifications || []).some((n: any) => !n.read) && (
+                <Button variant="outline" size="sm" onClick={() => notifications.forEach((n: any) => !n.read && markNotificationRead(n.id))} className="border-primary/20 text-primary">
+                  Mark all as read
+                </Button>
+              )}
+            </div>
+
+            <div className="max-w-2xl space-y-3">
+              {notifications && notifications.length > 0 ? (
+                notifications.map((notif: any) => (
+                  <Card key={notif.id} className={`glass-card transition-all ${notif.read ? 'opacity-60 grayscale' : 'border-primary/20 bg-primary/5'}`}>
+                    <CardContent className="p-4 flex items-start gap-4">
+                      <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${notif.read ? 'bg-muted-foreground' : 'bg-primary animate-pulse'}`} />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            notif.type === 'PUSH' ? 'bg-blue-400/10 text-blue-400' :
+                            notif.type === 'PULL' ? 'bg-purple-400/10 text-purple-400' :
+                            notif.type === 'ISSUE' ? 'bg-orange-400/10 text-orange-400' :
+                            'bg-green-400/10 text-green-400'
+                          }`}>
+                            {notif.type}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(notif.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium">{notif.message}</p>
+                        {notif.link && (
+                          <a href={notif.link} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                            <Rocket className="w-3 h-3" /> View Source
+                          </a>
+                        )}
+                      </div>
+                      {!notif.read && (
+                        <Button variant="ghost" size="sm" onClick={() => markNotificationRead(notif.id)} className="h-8 text-xs">
+                          Mark Read
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="py-20 text-center text-muted-foreground">
+                  <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  <p>No new notifications. Everything looks clear!</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        );
+
       case "activity":
         return (
           <motion.div key="activity" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
@@ -660,12 +823,43 @@ export function DashboardPage() {
           <motion.div key="starred" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <h2 className="text-2xl font-bold">Starred Repositories</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(starredRepos || [])
-                .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                .map((repo: any, index: number) => (
-                  <RepositoryCard key={repo.id} repository={repo} index={index} />
-                ))}
+              {starredRepos?.map((repo: any, index: number) => (
+                <RepositoryCard key={repo.id} repository={repo} index={index} />
+              ))}
             </div>
+          </motion.div>
+        );
+
+      case "deleted-repos":
+        return (
+          <motion.div key="deleted-repos" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Deleted Repositories</h2>
+                <p className="text-muted-foreground text-sm">Repositories that were found in our data but are now missing from GitHub.</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {deletedRepos.length} total
+              </div>
+            </div>
+
+            {deletedRepos.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {deletedRepos.map((repo: any, index: number) => (
+                  <div key={repo.id} className="relative group grayscale">
+                    <RepositoryCard repository={repo} index={index} />
+                    <div className="absolute top-2 right-2 bg-destructive/10 text-destructive text-[10px] px-2 py-0.5 rounded border border-destructive/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Deleted: {repo.deletedAt ? new Date(repo.deletedAt).toLocaleDateString() : 'Unknown'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white/5 border border-dashed rounded-xl border-white/10">
+                <Trash2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground">No deleted repositories found. Your sync is healthy!</p>
+              </div>
+            )}
           </motion.div>
         );
 
@@ -675,15 +869,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden relative">
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-        <EtheralShadow
-          color="#10b981"
-          animation={{ scale: 80, speed: 40 }}
-          noise={{ opacity: 0.5, scale: 1 }}
-          showTitle={false}
-        />
-      </div>
+    <div className="flex h-screen bg-transparent overflow-hidden relative">
       <div className="relative z-10 flex w-full h-full">
         <AIAssistant />
         <InlineAiProvider />
@@ -709,14 +895,36 @@ export function DashboardPage() {
           </motion.div>
         )}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden fixed top-4 left-4 z-40"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          <header className="flex items-center justify-between p-4 lg:p-6 border-b border-border/50 sticky top-0 bg-background/50 backdrop-blur-md z-30">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              <h1 className="text-xl font-bold text-gradient hidden sm:block">GitTEnz</h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-primary/20 hover:border-primary/50 hidden sm:flex"
+                onClick={() => {
+                  refetchRepos();
+                  refetchDeleted();
+                  toast.success("Synchronizing with GitHub...");
+                }}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Sync Data</span>
+              </Button>
+            </div>
+          </header>
+
           <main className="flex-1 overflow-auto p-4 lg:p-6">
             {activeTab === "repositories" && (
               <div className="mb-6 flex items-center gap-4">
@@ -762,10 +970,9 @@ export function DashboardPage() {
         onClose={() => setAnalyzerParams(null)} 
         dirHandle={analyzerParams?.dirHandle || null} 
         username={user?.username || 'user'}
-        token={token}
-        onContinue={async (analysis) => {
-           if(analyzerParams?.dirHandle && token) {
-             const newRepoData = {
+        onContinue={(analysis) => {
+           if(analyzerParams?.dirHandle) {
+             const newRepo = {
                 name: analyzerParams.dirHandle.name,
                 description: `Local ${analysis.language} project`,
                 language: analysis.language,
@@ -773,30 +980,11 @@ export function DashboardPage() {
                 stargazersCount: 0,
                 forksCount: 0,
                 updatedAt: new Date().toISOString(),
-                local: true,
-                localPath: "Local Project" // Placeholder for now
+                handle: analyzerParams.dirHandle
              };
-             
-             try {
-                const res = await fetch(`${API_URL}/api/repos/local-save`, {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                  },
-                  body: JSON.stringify(newRepoData)
-                });
-                
-                if(res.ok) {
-                   const savedRepo = await res.json();
-                   // @ts-ignore
-                   setLocalReposResults(prev => [...prev, { ...savedRepo, handle: analyzerParams.dirHandle }]);
-                   toast.success("Project successfully onboarded and synced!");
-                }
-             } catch (e) {
-                console.error("Failed to save local repo", e);
-                toast.error("Saved locally but failed to sync with GitTEnz server.");
-             }
+             // @ts-ignore
+             setLocalReposResults([newRepo]);
+             toast.success("Project successfully onboarded and loaded!");
            }
            setAnalyzerParams(null);
         }}
