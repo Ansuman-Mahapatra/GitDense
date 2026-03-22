@@ -1,8 +1,8 @@
 version: 1.0.0
 files:
   - url: GitDense-Setup-1.0.0.exe
-    sha512: 1lPzVQroHe4Rst/WWZqKp9R48y5+kLjqtLKWcwEP8LkqkGxqFIvzWvT+6bp+bVhQf/m1haOy66LlORHwzHRoNg==
-    size: 94086661
+    sha512: s+Guvn+TyA7BfPlgxvokt4rY70yJyHPSv1D8UvDA9m3jdhN27sMFT9B4Qu2TJipuS1DvLkzPtykE2111DZeXsg==
+    size: 94023878
 path: GitDense-Setup-1.0.0.exe
-sha512: 1lPzVQroHe4Rst/WWZqKp9R48y5+kLjqtLKWcwEP8LkqkGxqFIvzWvT+6bp+bVhQf/m1haOy66LlORHwzHRoNg==
-releaseDate: '2026-03-22T17:52:00.124Z'
+sha512: s+Guvn+TyA7BfPlgxvokt4rY70yJyHPSv1D8UvDA9m3jdhN27sMFT9B4Qu2TJipuS1DvLkzPtykE2111DZeXsg==
+releaseDate: '2026-03-22T18:37:27.291Z'

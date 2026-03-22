@@ -18,8 +18,8 @@ win:
   icon: public/favicon.ico
   artifactName: GitDense-Setup-${version}.exe
 nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+  oneClick: true
+  allowToChangeInstallationDirectory: false
   installerIcon: public/favicon.ico
   uninstallerIcon: public/favicon.ico
   createDesktopShortcut: true
