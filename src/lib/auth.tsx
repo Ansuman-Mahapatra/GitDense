@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { API_URL } from "@/config";
 
-const INACTIVITY_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// Desktop app: sessions are persistent — user stays logged in until they manually sign out.
+// JWT tokens from the backend are valid for 10 years. No inactivity auto-logout.
 
 export interface User {
   username: string;
@@ -86,67 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [fetchUser]);
 
-  // 30-day inactivity auto-logout (rolling session)
+  // ✅ Desktop App: Persistent session - just update last seen timestamp silently.
+  // No auto-logout — user stays signed in until they explicitly click "Sign Out".
   useEffect(() => {
     if (!user || !token) return;
-
-    const checkAndResetTimer = () => {
-      const now = Date.now();
-      const lastActivityStr = localStorage.getItem("lastActivityTimestamp");
-      
-      // If returning after being away too long, log out immediately
-      if (lastActivityStr) {
-        const lastActivity = parseInt(lastActivityStr, 10);
-        if (now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-          if (typeof window !== "undefined") {
-            window.alert("Session expired. You have been logged out due to 30 days of inactivity. Please log in again.");
-          }
-          signOut();
-          return;
-        }
-      }
-      
-      // Update activity timestamp in local storage
-      localStorage.setItem("lastActivityTimestamp", now.toString());
-    };
-
-    // Throttle the local storage writes so they only happen max once every 30 seconds
-    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
-    const handleActivity = () => {
-      if (throttleTimer) return;
-      throttleTimer = setTimeout(() => {
-        checkAndResetTimer();
-        throttleTimer = null;
-      }, 30000); 
-    };
-
-    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"];
-    
-    // Initial check on mount
-    checkAndResetTimer();
-
-    // Check periodically if the session has expired while tab is left open
-    const intervalTimer = setInterval(() => {
-      const now = Date.now();
-      const lastActivityStr = localStorage.getItem("lastActivityTimestamp");
-      if (lastActivityStr) {
-        const lastActivity = parseInt(lastActivityStr, 10);
-        if (now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-          if (typeof window !== "undefined") {
-            window.alert("Session expired. You have been logged out due to 30 days of inactivity. Please log in again.");
-          }
-          signOut();
-        }
-      }
-    }, 60000); // Check every minute
-
-    events.forEach((ev) => window.addEventListener(ev, handleActivity));
-    return () => {
-      events.forEach((ev) => window.removeEventListener(ev, handleActivity));
-      clearInterval(intervalTimer);
-      if (throttleTimer) clearTimeout(throttleTimer);
-    };
-  }, [user, token, signOut]);
+    // Record last active time (used by backend for GitHub verification rolling window)
+    localStorage.setItem("lastActivityTimestamp", Date.now().toString());
+  }, [user, token]);
 
   useEffect(() => {
     const initAuth = async () => {
