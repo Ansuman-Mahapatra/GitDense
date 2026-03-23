@@ -4,6 +4,17 @@ import { API_URL } from "@/config";
 // Desktop app: sessions are persistent — user stays logged in until they manually sign out.
 // JWT tokens from the backend are valid for 10 years. No inactivity auto-logout.
 
+// JWT tokens from the backend are valid for 10 years. No inactivity auto-logout.
+declare global {
+  interface Window {
+    electronAPI?: {
+      platform: string;
+      runGitCommand: (cwd: string, args: string[]) => Promise<any>;
+      onAuthToken: (callback: (token: string) => void) => void;
+    };
+  }
+}
+
 export interface User {
   username: string;
   name?: string;
@@ -113,6 +124,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(newToken);
     fetchUser(newToken);
   };
+
+  // Deep Link handler for GitDense protocol (auth via browser)
+  useEffect(() => {
+    if (window.electronAPI?.onAuthToken) {
+      window.electronAPI.onAuthToken((newToken: string) => {
+        console.log("Auth token received via deep link:", newToken);
+        setToken(newToken);
+        // Force navigate to dashboard
+        window.location.hash = "#/dashboard";
+      });
+    }
+  }, []);
 
   const signInWithGitHub = () => {
     // Open GitHub OAuth in a new browser tab — the callback is registered to gittenz.vercel.app

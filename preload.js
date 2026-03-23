@@ -4,4 +4,5 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   runGitCommand: (cwd, args) => ipcRenderer.invoke('run-git-command', { cwd, args }),
+  onAuthToken: (callback) => ipcRenderer.on('auth-token-received', (event, token) => callback(token)),
 });

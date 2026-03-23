@@ -4,8 +4,19 @@ const { exec } = require('child_process');
 
 const isDev = !app.isPackaged;
 
+// Register 'gitdense' as the default protocol client
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('gitdense', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('gitdense');
+}
+
+let mainWindow;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 1024,
@@ -28,25 +39,59 @@ function createWindow() {
     show: false,
   });
 
+  // Protocol Handler for Deep Linking (token login)
+  const handleProtocolUrl = (url) => {
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.protocol === 'gitdense:' && parsedUrl.host === 'auth') {
+        const token = parsedUrl.searchParams.get('token');
+        if (token) {
+          mainWindow.webContents.send('auth-token-received', token);
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.focus();
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse protocol URL:', e.message);
+    }
+  };
+
+  // Check if app was opened via protocol on startup
+  const argUrl = process.argv.find(arg => arg.startsWith('gitdense://'));
+  if (argUrl) {
+    mainWindow.once('ready-to-show', () => handleProtocolUrl(argUrl));
+  }
+
+  // Handle subsequent protocol requests (app already running)
+  app.on('second-instance', (event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      
+      const secondArgUrl = commandLine.find(arg => arg.startsWith('gitdense://'));
+      if (secondArgUrl) handleProtocolUrl(secondArgUrl);
+    }
+  });
+
   // Hide the default menu bar
   Menu.setApplicationMenu(null);
 
   if (isDev) {
-    win.loadURL('http://localhost:5173').catch((err) => {
+    mainWindow.loadURL('http://localhost:5175').catch((err) => { // Updated to port 5175
       console.error('Could not connect to Vite dev server:', err.message);
     });
-    win.webContents.openDevTools({ mode: 'detach' });
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    win.loadFile(path.join(__dirname, 'dist', 'index.html')).catch((err) => {
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html')).catch((err) => {
       console.error('Could not load production build:', err.message);
     });
   }
 
-  win.once('ready-to-show', () => {
-    win.show();
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
   });
 
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:') || url.startsWith('http:')) {
       shell.openExternal(url);
       return { action: 'deny' };
@@ -54,7 +99,7 @@ function createWindow() {
     return { action: 'allow' };
   });
 
-  win.webContents.on('will-navigate', (event, url) => {
+  mainWindow.webContents.on('will-navigate', (event, url) => {
     try {
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname !== 'localhost' && parsedUrl.protocol !== 'file:') {
@@ -65,15 +110,21 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
-  createWindow();
+// Ensure single instance lock for deep linking to work correctly
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.whenReady().then(() => {
+    createWindow();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
   });
-});
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -84,7 +135,6 @@ app.on('window-all-closed', () => {
 // IPC Git Command Handler
 ipcMain.handle('run-git-command', async (event, { cwd, args }) => {
   return new Promise((resolve) => {
-    // Basic verification of args to prevent common malicious commands
     const validArgs = args.filter(a => typeof a === 'string');
     const command = `git ${validArgs.join(' ')}`;
     
