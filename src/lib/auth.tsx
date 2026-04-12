@@ -31,6 +31,7 @@ export interface User {
   aiApiKey?: string;
   githubId?: string;
   lastGithubVerifiedAt?: string;
+  githubVerificationRequired?: boolean;
 }
 
 interface AuthContextType {
@@ -215,7 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await res.json();
   };
 
-  const githubVerificationRequired = !!user && (!user.githubId || (user.lastGithubVerifiedAt ? (Date.now() - new Date(user.lastGithubVerifiedAt).getTime() > 3 * 24 * 60 * 60 * 1000) : true));
+  // Use the backend-computed flag — the server is the single source of truth.
+  // This fixes the local-vs-production discrepancy caused by client/server
+  // clock skew and timezone differences.
+  const githubVerificationRequired = !!user && (user.githubVerificationRequired ?? (
+    !user.githubId || !user.lastGithubVerifiedAt
+  ));
 
   return (
     <AuthContext.Provider value={{ user, loading, githubVerificationRequired, signInWithGitHub, signInWithEmail, signUpWithEmail, verifySignupOtp, verifyOtp, signOut, token, setToken }}>
